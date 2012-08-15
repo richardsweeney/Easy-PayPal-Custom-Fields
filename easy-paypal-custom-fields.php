@@ -3,7 +3,7 @@
 Plugin Name: Easy PayPal Custom Fields
 Plugin URI: http://richardsweeney.com/blog/easy-paypal-custom-fields/
 Description: This plugin uses custom fields to make creating a PayPal button super-easy. There is no complicated shortcut syntax to remember.
-Version: 2.0.7
+Version: 2.0.8
 Author: Richard Sweeney
 Author URI: http://richardsweeney.com/
 */
@@ -27,17 +27,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
 /*
-
- This programme is written using OOP techniques. OOP is awesome and works
- great with WordPress. If you've been thinking about giving it a go, I can
- but suggest that you go for it!
- 
  @richardsweeney
-
 */
 
+
 class RPS_eppcf {
-	
+
 	// Array of currency codes
 	private $currency_array = array(
 		'Australian Dollar' => 'AUD',
@@ -56,13 +51,13 @@ class RPS_eppcf {
 		'Swiss Franc' => 'CHF',
 		'U.S. Dollar' => 'USD'
 	);
-	
+
 	// Types of button supported
 	private $button_type_array = array(
 		'Buy Now',
 		'Donations'
 	);
-	
+
 	// Available button themes
 	private $button_theme_array = array(
 		'light' => 'light theme',
@@ -84,7 +79,7 @@ class RPS_eppcf {
 		'require_address'
 		//'drop_down_title'
 	);
-	
+
 	// Default values - used for checking against individual post meta - see get_the_post_meta()
 	private $default_meta = array(
 		'user_email',
@@ -94,13 +89,13 @@ class RPS_eppcf {
 		'url',
 		'currency'
 	);
-	
+
 	// These variables are declared later
 	public $opts; // default options, declared in __construct()
 	public $my_post_meta; // indivdual, additional post meta, declared in get_the_post_meta()
 	public $paypal_button; // the button, declared in create_button()
 
-	
+
 /**
 	* All WordPress hooks must be added to constuctor function.
 	*/
@@ -108,33 +103,33 @@ class RPS_eppcf {
 
 		// Define current version
 		define( 'PAYPAL_VERSION', '2.0.7' );
-	
+
 		// Activation Hook
 		register_activation_hook( __FILE__, array( &$this, 'activate_my_plugin' ) );
-	
+
 		// Add stylesheet to the admin pages & the front end
 		add_action( 'admin_print_styles-post.php', array( &$this, 'add_css' ) );
 		add_action( 'admin_print_styles-post-new.php', array( &$this, 'add_css' ) );
 		add_action( 'wp_print_styles', array( &$this, 'add_css' ) );
-		
+
 		// Add my JS to WP Admin
 		add_action( 'init', array( &$this, 'add_my_js' ) );
-		
+
 		// Create options page & menu item
-		add_action( 'admin_menu', array( &$this, 'add_my_options_page' ) );	
-		
+		add_action( 'admin_menu', array( &$this, 'add_my_options_page' ) );
+
 		// Create link to settings page on plugin activation
 		add_filter( 'plugin_action_links', array( &$this, 'add_link_to_settings_page' ), 10, 2 );
-		
+
 		// Register and define the settings
 		add_action( 'admin_init', array( &$this, 'create_settings_sections' ) );
 
 		// Create paypal meta box
 		add_action( 'add_meta_boxes', array( &$this, 'register_meta_box' ) );
-	
+
 		// Save post meta
 		add_action('save_post', array( &$this, 'save_eppcf_meta' ) );
-		
+
 		// Hook into the_content & show the button baby
 		add_action('the_content', array( &$this, 'display_button' ) );
 
@@ -142,15 +137,15 @@ class RPS_eppcf {
 		add_shortcode( 'rps-paypal', array( &$this, 'create_shortcode' ) );
 
 		$this->opts = get_option( 'rps_eppcf_options' );
-		
+
 	}
-	
-	
+
+
 	/**
 	* When the plugin is activated, add the default options
 	*/
 	public function activate_my_plugin() {
-	
+
 		/* On plugin activation register the following options */
 		$button = array(
 			'user_email' => '',
@@ -161,42 +156,44 @@ class RPS_eppcf {
 			'url' => ''
 		);
 		if( !get_option( 'rps_eppcf_options' ) ) {
+
 			update_option( 'rps_eppcf_options', $button );
+
 		}
-		
+
 		/* Uninstall function */
 		register_uninstall_hook( __FILE__, array( &$this, 'uninstall_my_plugin' ) );
-	
+
 	}
-	
-		
+
+
  /**
 	* Uninstall function
 	*/
 	public function uninstall_my_plugin() {
-			
+
 		// Get any custom post types
 		$args = array(
 	  	'public'   => true,
 		  '_builtin' => false
-		); 
+		);
 		$output = 'names';
 		$operator = 'and';
 		$custom_post_types = get_post_types( $args, $output, $operator );
-		
+
 		// Regular 'post' and 'page' post types
 		$regular_post_types = array(
 			'post' => 'post',
 			'page' => 'page'
 		);
-		
+
 		if( isset( $custom_post_types ) ) {
 			// Merge the array to get ALL post types
 			$all_post_types = array_merge( $regular_post_types, $custom_post_types );
 		} else {
 			$all_post_types = $regular_post_types;
 		}
-		
+
 		//remove any additional post_meta
 		foreach( $all_post_types as $this_post_type ) {
 			$allposts = get_posts( 'numberposts=-1&post_type=' . $this_post_type . '&post_status=any' );
@@ -204,24 +201,24 @@ class RPS_eppcf {
 	  foreach( $allposts as $everypost ) {
 	    delete_post_meta( $everypost->ID, '_rps_eppcf_array' );
 	  }
-	  
+
 	  // Delete any stored options
 		delete_option( 'rps_eppcf_options' );
-	  
+
 	}
-	
-		
+
+
  /**
 	* Add custom CSS
 	*/
 	public function add_css() {
 		wp_enqueue_style( 'eppcf_css', plugin_dir_url( __FILE__ ) . 'css/paypal.css' );
 	}
-	
+
  /**
 	* Add custom JavaScript
 	*/
-	public function add_my_js() {	
+	public function add_my_js() {
 		//wp_deregister_script( 'jquery' );
 		//wp_register_script( 'jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js' );
 		if( is_admin() ) {
@@ -229,13 +226,13 @@ class RPS_eppcf {
 			wp_enqueue_script( 'eppcf_js', plugin_dir_url( __FILE__ ) . 'js/paypal.jquery.js', 'jquery' );
 		}
 	}
-	
+
 	public function add_admin_js(){
 		wp_enqueue_script( 'jquery' );
 		wp_enqueue_script( 'eppcf_admin_js', plugin_dir_url( __FILE__ ) . 'js/paypal.admin.js', 'jquery' );
 	}
-	
-		
+
+
 /**
 	* Loops through post meta and stores it in @var $this->my_post_meta
 	* Compares default values to values set per post
@@ -243,22 +240,22 @@ class RPS_eppcf {
 	*
 	* @param array plugin's post-meta
 	*/
-	
+
 	public function get_the_post_meta( $meta_array ){
-	
+
 		$post_meta_array = array();
 		$post_meta_array['show'] = ( !empty( $meta_array['show'] ) ) ? $meta_array['show'] : 'no';
 		$post_meta_array['name'] = ( !empty( $meta_array['name'] ) ) ? $meta_array['name'] : '';
-		
+
 		foreach( $this->some_meta as $meta ){
 			$post_meta_array[$meta] = ( isset ( $meta_array[$meta] ) ) ? $meta_array[$meta] : '';
 		}
-		
+
 		foreach( $this->default_meta as $default ){
 			$post_meta_array[$default] = ( isset( $meta_array[$default] ) && !empty( $meta_array[$default] ) ) ? $meta_array[$default] : $this->opts[$default];
 		}
-		
-		
+
+
 		/* Backwards compatibility */
 		// My old, stupid names for stuff, because I'm a dork.
 		if( isset( $meta_array['username'] ) ) {
@@ -275,8 +272,8 @@ class RPS_eppcf {
 		}
 		$this->my_post_meta = $post_meta_array;
 	}
-	
-	
+
+
  /**
 	* Add options page
 	*/
@@ -292,49 +289,49 @@ class RPS_eppcf {
 		add_action( 'admin_print_styles-' . $ops, array( &$this, 'add_css' ) );
 		add_action( 'admin_print_styles-' . $ops, array( &$this, 'add_admin_js' ) );
 	}
-	
-	
+
+
  /**
 	* Add link options page from plugin init
 	*/
 	public function add_link_to_settings_page( $links, $file ) {
-	
+
     static $this_plugin;
- 
+
     if( !$this_plugin ) {
       $this_plugin = plugin_basename( __FILE__ );
     }
- 
+
     if( $file == $this_plugin ) {
       $settings_link = '<a href="' . get_bloginfo( 'wpurl' ) . '/wp-admin/options-general.php?page=easy-paypal-custom-fields">Settings</a>';
       array_unshift( $links, $settings_link );
     }
- 
+
     return $links;
-    
+
 	}
-	
-	
-	
+
+
+
 /**
 	* Draw the options page
 	*/
-	
+
 	public function echo_options_page() {
-		
+
 		// Shorthand as there are some many checks to be made against button_type & theme
 		$button_text = $this->opts['button_text'];
 		$button_type = $this->opts['button_type'];
-		$theme = $this->opts['theme'];		
+		$theme = $this->opts['theme'];
 		?>
-	
+
 		<div id="rps-inside" class="wrap">
-		
+
 			<div id="message" class="updated">
 				<p>Thanks for downloading! If you like the plugin, feel free to give me a decent rating on the <a href="http://wordpress.org/extend/plugins/easy-paypal-custom-fields/">WordPress plugins site</a>.</p>
 				<p>I do tweet from time to time too, if you'd like to follow me, my username is <a href="http://twitter.com/richardsweeney/">@richardsweeney</a></p>
 			</div>
-		
+
 			<div id="icon-plugins" class="icon32"></div>
 			<h2>Easy PayPal Custom Fields settings</h2>
 			<form action="options.php" method="post">
@@ -345,12 +342,12 @@ class RPS_eppcf {
 			?>
 				<br>
 				<input name="Submit" type="submit" class="button-primary" id="submit" value="Save Changes" />
-				
+
 				<input type="hidden" id="plugin-url" value="<?php echo plugin_dir_url( __FILE__ ); ?>">
 			</form>
-			
+
 			<h4 class="paypal-form"><br>Your Button will look like this:<br><br>
-			
+
 			<?php
 
 				if( $theme == 'pp_large' ) {
@@ -375,32 +372,32 @@ class RPS_eppcf {
 					$args = array( 'type' => 'custom_theme', 'class' => 'rps-paypal-button-red', 'button_text' => $button_text );
 				}
 				echo $this->type_of_button( $args );
-			
+
 			?>
-					
+
 			</h4>
-			
+
 		</div>
-	
+
 	<?php }
-	
-	
-	
+
+
+
 	public function create_settings_sections(){
-	
+
 		register_setting(
 			'rps_eppcf_options',
 			'rps_eppcf_options',
 			array( &$this, 'validate_options' )
 		);
-	
+
 		add_settings_section(
 			'rps_eppcf_main',
 			'Enter your default settings here',
 			array( &$this, 'echo_settings_section_header' ),
 			'rps_eppcf_settings_page'
 		);
-		
+
 		$settings_fields = array(
 			array(
 				'id' => 'settings-input', //HTML ID tag for the section
@@ -438,14 +435,14 @@ class RPS_eppcf {
 				'function' => array( &$this, 'echo_settings_theme' )
 			)
 		);
-		
+
 		// Settings page on which to show the section - stays the same for all fields!
 		$settings_page = 'rps_eppcf_settings_page';
-		
+
 		// Section of the settings page in which to show the form field as defined by the add_settings_section() function
 		// stays the same for all fields
 		$settings_sections = 'rps_eppcf_main';
-	
+
 		foreach( $settings_fields as $settings_field ) {
 			add_settings_field(
 				$settings_field[ 'id' ],
@@ -455,23 +452,23 @@ class RPS_eppcf {
 				$settings_sections
 			);
 		}
-	
+
 	}
-	
-	
+
+
  /**
 	*	Draw settings page functions follow:
 	*/
 	public function echo_settings_section_header() {
 		// echo '<p><strong>Plugin Settings:</strong></p>';
 	}
-	
+
 
 	public function echo_settings_input() { ?>
 		<input placeholder="email@address.com" id="user-email" name="rps_eppcf_options[user_email]" type="email" value="<?php echo $this->opts['user_email']; ?>" />
 	<?php }
-	
-	
+
+
 	public function echo_settings_currency() { ?>
 		<select id="currency" name="rps_eppcf_options[currency]">
 			<?php foreach( $this->currency_array as $key => $value ) : ?>
@@ -479,8 +476,8 @@ class RPS_eppcf {
 			<?php endforeach; ?>
 		</select>
 	<?php }
-	
-	
+
+
 	public function echo_settings_button_type() { ?>
 		<p>
 			<select id="button-type" name="rps_eppcf_options[button_type]">
@@ -492,35 +489,35 @@ class RPS_eppcf {
 			</select>
 		</p>
 	<?php }
-	
-	
+
+
 	public function echo_settings_button_text() { ?>
 		<input placeholder="eg. 'Buy CD'" id="button-text" name="rps_eppcf_options[button_text]" type="text" value="<?php echo $this->opts['button_text']; ?>" />
 	<?php }
-	
-	
+
+
 	public function echo_settings_url() { ?>
 		<input placeholder="The URL to return to after checkout" type="url" id="url" name="rps_eppcf_options[url]" value="<?php echo $this->opts['url']; ?>" />
 	<?php }
-	
-	
+
+
 	public function echo_settings_post_type() {
-		
+
 		// Get any custom post types
 		$args = array(
 	  	'public'   => true,
 		  '_builtin' => false
-		); 
+		);
 		$output = 'names';
 		$operator = 'and';
 		$custom_post_types = get_post_types( $args, $output, $operator );
-		
+
 		// Regular 'post' and 'page' post types
 		$regular_post_types = array(
 			'post' => 'post',
 			'page' => 'page'
 		);
-		
+
 		if( isset( $custom_post_types ) ) {
 			// Merge the array to get ALL post types
 			$all_post_types = array_merge( $regular_post_types, $custom_post_types );
@@ -550,8 +547,8 @@ class RPS_eppcf {
 		</p>
 	<?php
 	}
-	
-	
+
+
 	public function echo_settings_theme() { ?>
 		<p>
 			<select id="theme" name="rps_eppcf_options[theme]">
@@ -563,10 +560,10 @@ class RPS_eppcf {
 			</select>
 		</p>
 		<?php }
-	
+
 	/* End of draw settings sections functions */
-	
-	
+
+
  /**
 	* Validate user input on options page
 	*
@@ -574,9 +571,9 @@ class RPS_eppcf {
 	* @return array of sanitized values
 	*/
 	public function validate_options( $input ) {
-	
+
 		$valid = array();
-		
+
  		// PayPal username (email address)
 		if( empty( $input['user_email'] ) ) {
 				add_settings_error(
@@ -595,42 +592,42 @@ class RPS_eppcf {
 		} else {
 			$valid['user_email'] = sanitize_email( $input['user_email'] );
 		}
-		
+
 		// Currency
 		if( in_array( $input['currency'], $this->currency_array) ) {
 			$valid['currency'] = $input['currency'];
 		}
-		
+
 		// Button type
 		if( in_array( $input['button_type'], $this->button_type_array ) ) {
 			$valid['button_type'] = $input['button_type'];
 		}
-		
+
 		// Button text
 		if( isset( $input['button_text'] ) ) {
 			$valid['button_text'] = trim( sanitize_text_field( $input['button_text'] ) );
 		}
-		
+
 		// Return url
 		if( isset( $input['url'] ) ) {
 			$valid['url'] = esc_url_raw( $input['url'] );
 		}
-		
+
 		// post type
 		if( isset( $input['post_type'] ) ) {
 			foreach( $input['post_type'] as $post_type ) {
 				$post_type = sanitize_text_field( $post_type );
-				$valid['post_type'][] = $post_type;	
+				$valid['post_type'][] = $post_type;
 			}
 		}
-		
+
 		// Button theme
 		if( array_key_exists( $input['theme'], $this->button_theme_array ) ) {
 			$valid['theme'] = $input['theme'];
 		}
-	
+
 		return $valid;
-		
+
 	}
 
 
@@ -639,10 +636,10 @@ class RPS_eppcf {
 	* See http://codex.wordpress.org/Function_Reference/add_meta_box
 	*/
 	public function register_meta_box() {
-		
+
 		// Loop through the selected post types & create the meta box on the selected pages
 		if( isset( $this->opts['post_type'] ) ) {
-			foreach( $this->opts['post_type'] as $post_type ) {	
+			foreach( $this->opts['post_type'] as $post_type ) {
 				add_meta_box(
 				'rps_paypal_meta',
 				'Add Paypal Button',
@@ -653,23 +650,23 @@ class RPS_eppcf {
 				);
 			}
 		}
-		
+
 	}
-	
+
 
 
  /**
 	*	Echo the meta box
 	*/
 	public function echo_meta_box( $post ) {
-		
+
 		// Get the current post meta & default settings
 		$rps_meta_array = get_post_meta( $post->ID, '_rps_eppcf_array', true );
 		$this->get_the_post_meta( $rps_meta_array );
 		?>
-		
+
 		<div id="rps-inside">
-		
+
 			<p>
 				<span>Show button</span>
 				<select name="show" id="show">
@@ -678,27 +675,27 @@ class RPS_eppcf {
 					<option value="top" <?php selected( $this->my_post_meta['show'] , 'top' ); ?>>At top of post</option>
 				</select>
 			</p>
-		
+
 			<p>
 				<span>Product name *</span>
 				<input placeholder="The name of the item for sale" type="text" name="name" id="name" value="<?php if( isset( $this->my_post_meta['name']) ) echo $this->my_post_meta['name']; ?>" />
 			</p>
-			
+
 			<p>
 				<span>Item number (optional)</span>
 				<input type="text" name="item_no" id="item_no" value="<?php echo $this->my_post_meta['item_no']; ?>">
-			</p>	
-					
+			</p>
+
 			<p>
 				<span>Amount **</span>
 				<input placeholder="eg 9.99" type="text" id="amount" name="amount" value="<?php echo $this->my_post_meta['amount']; ?>" />
 			</p>
-			
+
 			<p>
 				<span>Postage (optional)</span>
 				<input placeholder="eg 1.99" type="text" id="postage" name="postage" value="<?php echo $this->my_post_meta['postage']; ?>" />
 			</p>
-			
+
 			<p>
 				<span>Require customers' address<br />(Buy Now only)</span>
 				<label>
@@ -706,7 +703,7 @@ class RPS_eppcf {
 					Yes
 				</label>
 			</p>
-			
+
 			<p>
 				<span>Allow customer to select quantity</span>
 				<label>
@@ -714,7 +711,7 @@ class RPS_eppcf {
 					Yes
 				</label>
 			</p>
-			
+
 			<p>
 				<span>Add a custom textfield</span>
 				<label>
@@ -722,35 +719,35 @@ class RPS_eppcf {
 					Yes
 				</label>
 			</p>
-			
+
 			<p id="custom_textfield">
 				<span>Title for the textfield</span>
 				<input placeholder="add a title for the textfield" type="text" id="textfield_title" name="textfield_title" value="<?php echo $this->my_post_meta['textfield_title']; ?>" />
 			</p>
-			
+
 		<!--
 			<p>
 				<span>Add drop-down menu (optional):</span>
 				<input placeholder="title for the menu" type="text" id="drop_down_title" name="drop_down_title" value="<?php echo $this->my_post_meta['drop_down_title']; ?>" />
 			</p>
 		-->
-		
+
 		<p>* Leave this field blank to allow the customer to enter their own name for the item</p>
 		<p>** <strong>Don't use a currency symbol!</strong> Leave this field blank to allow the customer to enter their own amount on the PayPal payment page</p>
-		
+
 		<div id="rps-settings-box">
-		
+
 			<p>
 				<br>
 				<span>Paypal username</span>
 				<input placeholder="email@address.com" type="email" id="user_email" name="user_email" value="<?php echo antispambot( $this->my_post_meta['user_email'] ); ?>" />
 			</p>
-			
+
 			<p>
 				<span>Custom button text</span>
 				<input placeholder="eg. 'Buy CD'" type="text" id="button_text" name="button_text" value="<?php echo $this->my_post_meta['button_text']; ?>" />
 			</p>
-			
+
 			<p>
 				<span>Currency</span>
 				<select id="currency" name="currency">
@@ -759,7 +756,7 @@ class RPS_eppcf {
 					<?php endforeach; ?>
 				</select>
 			</p>
-			
+
 			<p>
 				<span>Button Type</span>
 				<select id="button_type" name="button_type">
@@ -770,12 +767,12 @@ class RPS_eppcf {
 					<?php endforeach; ?>
 				</select>
 			</p>
-			
+
 			<p>
 				<span>Return Url (optional)</span>
 				<input placeholder="The full URL to return to after checkout" type="url" id="url" name="url" value="<?php echo $this->my_post_meta['url']; ?>" />
 			</p>
-			
+
 			<p>
 				<span>Theme</span>
 				<select id="theme" name="theme">
@@ -786,37 +783,37 @@ class RPS_eppcf {
 					<?php endforeach; ?>
 				</select>
 			</p>
-		
+
 		</div>
-		
+
 		<p><br />If you want to add the button anywhere in the post you can copy &amp; paste the shortcode
 		<span id="rps-shortcode">[rps-paypal]</span>
 		wherever you'd like the button to appear. <a href="http://en.support.wordpress.com/shortcodes/">What's a shortcode?</a></p>
-		
+
 		</div>
-	
+
 	<?php }
-	
-	
-	
+
+
+
  /**
 	* Save post meta
 	*/
 	public function save_eppcf_meta( $post_id ) {
-			
+
 		// Check user permissions
 		if( !current_user_can( 'edit_posts' ) ) {
 			wp_die( "You don't have permission to do that!" );
 		}
-		
+
 		// Check if WP is autosaving the post. Stops WP from deleting meta values - thanks WP :P.
 	 	if( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) {
 	    return $post_id;
 	  }
-	  
+
 		// Create the array to store the sanitized values
 		$eppcf_array = array();
-	  
+
 		// Helper array to perform basic sanitization on multiple vals
 	  $textfield_array = array(
 	  	'item_no', // Item number
@@ -829,7 +826,7 @@ class RPS_eppcf {
 		  	$eppcf_array[$textfield] = trim( sanitize_text_field( $_POST[$textfield] ) );
 	  	}
 	  }
-		
+
 		// Check against this array of values
 		$show_array = array( 'no', 'bottom', 'top' );
 		// Where to show the button
@@ -838,16 +835,16 @@ class RPS_eppcf {
 		} else {
 			$eppcf_array['show'] = 'no';
 		}
-		
+
 		// Name of thing for sale
 		if( isset( $_POST['name'] ) ) {
 			$eppcf_array['name'] = trim( sanitize_text_field( $_POST['name'] ) );
 		} else {
 			$eppcf_array['name'] = '';
 		}
-		
+
 		$checkboxVals = array( 'require_address', 'textfield_checkbox', 'quantity_checkbox' );
-		
+
 		foreach( $checkboxVals as $checkboxVal ){
 			if( isset( $_POST[ $checkboxVal ] ) && $_POST[ $checkboxVal ] == 'true' ){
 				$eppcf_array[ $checkboxVal ] = true;
@@ -855,54 +852,54 @@ class RPS_eppcf {
 				$eppcf_array[ $checkboxVal ] = false;
 			}
 		}
-		
+
 		// PayPal username (email address)
 		if( isset( $_POST['user_email'] ) && is_email( $_POST['user_email'] ) ) {
 			$eppcf_array['user_email'] = trim( sanitize_email( $_POST['user_email'] ) );
 		}
-		
+
 		// Currency
 		if( isset( $_POST['currency'] ) && in_array( $_POST['currency'], $this->currency_array ) ){
 			$eppcf_array['currency'] = $_POST['currency'];
 		}
-		
+
 		// Amount
 		if( isset( $_POST['amount'] ) && is_numeric( $_POST['amount'] ) ) {
 			$eppcf_array['amount'] = trim( $_POST['amount'] );
 		}
-		
+
 		// Postage
 		if( isset( $_POST['postage'] ) && is_numeric( $_POST['postage'] ) ) {
 			$eppcf_array['postage'] = trim( $_POST['postage'] );
 		}
-		
+
 		// Return url
 		if( isset( $_POST['url'] ) ) {
 			$eppcf_array['url'] = trim( esc_url_raw( $_POST['url'] ) );
 		}
-		
+
 		// Button type
 		if( isset( $_POST['button_type'] ) && in_array( $_POST['button_type'], $this->button_type_array ) ) {
 			$eppcf_array['button_type'] = $_POST['button_type'];
 		}
-		
+
 		// Button theme
 		if( isset( $_POST['theme'] ) && array_key_exists( $_POST['theme'], $this->button_theme_array ) ) {
 			$eppcf_array['theme'] = $_POST['theme'];
 		}
-		
+
 		// Update or add post meta
 		update_post_meta( $post_id, '_rps_eppcf_array', $eppcf_array );
-		
+
 	}
-	
-	
+
+
  /**
  	* Helper to draw the revelant type of button
  	*
  	* @param array type of button, src of button, button id + button text
  	* @return HTML blob of proper button input type (img or button)
- 	*/	
+ 	*/
 	private function type_of_button( $args ) {
 		$defaults = array(
 			'type' => 'paypal_image',
@@ -917,30 +914,30 @@ class RPS_eppcf {
 			return '<input type="submit" id="eppcf-button" class="rps-custom-theme-button ' . $args['class'] . '" value="' . $args['button_text'] . '">';
 		}
 	}
-	
-	
+
+
  /**
 	*  Echo PayPal button
 	*/
 	public function create_button(){
-		
+
 		global $post;
 		// Get post meta
 		$rps_meta_array = get_post_meta( $post->ID, '_rps_eppcf_array', true );
 		$this->get_the_post_meta( $rps_meta_array );
-		
+
 		// Shorthand
 		$theme = $this->my_post_meta['theme'];
 		$button_type = $this->my_post_meta['button_type'];
 		$button_text = $this->my_post_meta['button_text'];
 		$tf_i = 0;
-		
+
 		/*
 			I chose not to add the drop-down menu option.
 			Only one person asked for it and I think it makes things overly complicated.
 			KISS
 		*/
-		
+
 		// If there are 2 additional textfields, they must have different IDs
 /*
 		if( empty( $this->my_post_meta['text_field'] ) && !empty( $this->my_post_meta['drop_down_title'] ) ) {
@@ -952,11 +949,11 @@ class RPS_eppcf {
 			$dd_i = 1;
 		}
 */
-		
+
 		// Button HTML
 		$button = '<div class="paypal-form">
 			<form action="https://www.paypal.com/cgi-bin/webscr" method="post">';
-		
+
 		// Text field
 		if( $this->my_post_meta['textfield_checkbox'] == true ) {
 			$button .= '<table>
@@ -964,7 +961,7 @@ class RPS_eppcf {
 				<tr><td><input type="text" name="os' . $tf_i . '" maxlength="200"></td></tr>
 			</table>';
 		}
-		
+
 		// Drop down menu
 /*
 		if( !empty( $this->my_post_meta['drop_down_title'] ) ) {
@@ -980,23 +977,23 @@ class RPS_eppcf {
 			</table>';
 		}
 */
-		
+
 		// Button type and theme
 		if( $button_type == 'Buy Now' ) {
 			$button .= '<input type="hidden" name="cmd" value="_xclick">
 			<input type="hidden" name="button_subtype" value="services">
-			<input type="hidden" name="bn" value="PP-BuyNowBF:btn_buynowCC_LG.gif:NonHostedGuest">';	
+			<input type="hidden" name="bn" value="PP-BuyNowBF:btn_buynowCC_LG.gif:NonHostedGuest">';
 		} else if( $button_type == 'Donations' ) {
 			$button .= '<input type="hidden" name="cmd" value="_donations">
 			<input type="hidden" name="bn" value="PP-DonationsBF:btn_donateCC_LG.gif:NonHostedGuest">';
 		}
-		
+
 		switch( $theme ){
 			case 'pp_large' :
 				if( $button_type == 'Buy Now' ) {
-					$args = array();
-				} else if ( $button_type == 'Donations' ) {
 					$args = array( 'src' => 'btn_buynow_LG.gif' );
+				} else if ( $button_type == 'Donations' ) {
+					$args = array( 'src' => 'btn_donate_LG.gif' );
 				}
 				break;
 			case 'pp_small' :
@@ -1019,41 +1016,41 @@ class RPS_eppcf {
 				$args = array( 'type' => 'custom_theme', 'class' => 'rps-paypal-button-red', 'button_text' => $button_text );
 				break;
 		}
-		
+
 		/* Helper function */
 		$button .= $this->type_of_button( $args );
-		
+
 		// Username (email address)
 		$button .= '<input type="hidden" name="business" value="' . antispambot( $this->my_post_meta['user_email'] ) .'" />';
-		
+
 		// Name of item for sale
 		if( !empty( $this->my_post_meta['name'] ) ) {
 			$button .= '<input type="hidden" name="item_name" value="' . $this->my_post_meta['name'] . '" />';
 		}
-		
+
 		// Item number
 		if( !empty( $this->my_post_meta['item_no'] ) ) {
 			$button .= '<input type="hidden" name="item_number" value="' . $this->my_post_meta['item_no'] . '" />';
 		}
-		
+
 		// ammount, currency, postage
 		$button .= '
 			<input type="hidden" name="amount" value="' . $this->my_post_meta['amount'] . '" />
 			<input type="hidden" name="currency_code" value="' . $this->my_post_meta['currency'] . '" />';
-		
+
 		if( $button_type == 'Buy Now' ) {
 			$button .= '<input type="hidden" name="shipping" value="' . $this->my_post_meta['postage'] . '" />';
 		}
-		
+
 		$requireAddress = ( $this->my_post_meta['require_address'] == true ) ? 2 : 1;
-		
+
 		$button .= '<input type="hidden" name="no_shipping" value="' . $requireAddress . '">
 			<input type="hidden" name="rm" value="2" />';
-		
+
 		if( $button_type == 'Buy Now' && $this->my_post_meta['quantity_checkbox'] == true ) {
 			$button .= '<input type="hidden" name="undefined_quantity" value="1">';
 		}
-		
+
 		// Return url
 		if( !empty( $this->my_post_meta['url'] ) ) {
 			$button .= '<input type="hidden" name="return" value="' . $this->my_post_meta['url'] . '" />';
@@ -1061,14 +1058,14 @@ class RPS_eppcf {
 
 		$button .= '</form>
 		</div>';
-		
+
 		// Store the button as $paypal_button, visible throughout the class
 		$this->paypal_button = $button;
 
 	}
-	
-	
-	
+
+
+
  /**
 	* Where the button should appear
 	*
@@ -1076,14 +1073,14 @@ class RPS_eppcf {
 	* @return string modified post content
 	*/
 	public function display_button( $content ) {
-	
+
 		global $post;
 		// Get the current post meta
 		$rps_meta_array = get_post_meta( $post->ID, '_rps_eppcf_array', true );
 		$show = ( isset( $rps_meta_array['show'] ) ) ? $rps_meta_array['show'] : 'no';
 		// Create the button
 		$this->create_button();
-		
+
 		// Determine where to show the button based on value of $show
 		if( $show != 'no' ) {
 			switch( $show ) {
@@ -1099,9 +1096,9 @@ class RPS_eppcf {
 		} else {
 			return $content;
 		}
-		
+
 	}
-	
+
 
 
  /**
@@ -1111,7 +1108,7 @@ class RPS_eppcf {
 		$this->create_button();
 		return $this->paypal_button;
 	}
-	
+
 }
 
 
@@ -1122,5 +1119,5 @@ class RPS_eppcf {
 	* having to prefix all my functions makes it all super worth it.
 	*/
 	$rps_eppcf = new RPS_eppcf();
-	
+
 ?>

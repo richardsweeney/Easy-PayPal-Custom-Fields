@@ -118,3 +118,6 @@ In the edit posts screen (when you're writing a new post or editing an existing 
 
 * Fixed a few minor issues.
 * Updated the settings page: It's now possible to view the different themes without having to refresh the page.
+
+= 2.0.8 =
+* Bug fixes for PayPal images.
