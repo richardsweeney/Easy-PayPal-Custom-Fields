@@ -49,7 +49,8 @@ class RPS_eppcf {
 		'Singapore Dollar' => 'SGD',
 		'Swedish Krona' => 'SEK',
 		'Swiss Franc' => 'CHF',
-		'U.S. Dollar' => 'USD'
+		'U.S. Dollar' => 'USD',
+		'Turkish Lira (only for Turkish members)' => 'TRY'
 	);
 
 	// Types of button supported
