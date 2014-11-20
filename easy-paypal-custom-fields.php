@@ -663,6 +663,9 @@ class RPS_eppcf {
 		// Get the current post meta & default settings
 		$rps_meta_array = get_post_meta( $post->ID, '_rps_eppcf_array', true );
 		$this->get_the_post_meta( $rps_meta_array );
+
+		// create a custom nonce for submit verification later
+		wp_nonce_field( 'epcf-update-meta-'.get_the_ID().'-'.get_current_blog_id(), 'epcf-nonce' );
 		?>
 
 		<div id="rps-inside">
@@ -800,6 +803,9 @@ class RPS_eppcf {
 	* Save post meta
 	*/
 	public function save_eppcf_meta( $post_id ) {
+
+		//make sure data came from our meta box
+		if ( !isset( $_POST['epcf-nonce'] ) || !wp_verify_nonce( $_POST['epcf-nonce'], 'epcf-update-meta-'.$post_id.'-'.get_current_blog_id() ) ) return;
 
 		// Check user permissions
 		if( !current_user_can( 'edit_posts' ) ) {
